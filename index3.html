@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>우주 방치형 클리커: 인피니티 소드 (v4.4)</title>
+  <title>우주 방치형 클리커: 인피니티 소드 (v4.5)</title>
   <style>
     /* ========== 기본 리셋 및 스타일 ========== */
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -49,7 +49,7 @@
     #goldDisplay, #stageDisplay { font-weight: bold; font-size: 16px; text-shadow: 0 0 5px currentColor; }
     #goldDisplay { color: #ffd700; }
     
-    /* 도전 버튼 (보스전 전용) */
+    /* 도전 버튼 (보스전 패배 후 활성화) */
     #challengeBtn {
       display: none; /* 기본 숨김 */
       padding: 6px 12px;
@@ -111,7 +111,6 @@
     #shopModal.open { display: flex; }
     #shopContent { background: #0a1111; border: 2px solid #00ffcc; border-radius: 12px; padding: 20px; width: 100%; max-width: 400px; box-shadow: 0 0 30px rgba(0,255,204,0.2); }
     
-    /* 상점 헤더 및 멀티플라이어 버튼 */
     .shopHeader { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
     .shopHeader h2 { color: #00ffcc; font-size: 20px; margin: 0; }
     
@@ -141,6 +140,7 @@
     }
     #toastMsg.show { opacity: 1; }
     #toastMsg.fail { border-color: #ff0000; color: #ffaaaa; }
+    #toastMsg.warning { border-color: #ffaa00; color: #ffffaa; }
     #toastMsg.success { border-color: #00ff00; color: #aaffaa; }
   </style>
 </head>
@@ -154,7 +154,7 @@
       <span id="goldDisplay">💰 0 G</span>
       <span id="stageDisplay">STAGE 1</span>
       <!-- 도전 버튼 -->
-      <button id="challengeBtn">☠️ 보스 레이드</button>
+      <button id="challengeBtn">☠️ 보스 재도전</button>
     </div>
     <div id="healthBarContainer">
       <div id="healthBarFill"></div>
@@ -308,7 +308,6 @@
     // ============================================================
     // 대량 구매 계산 로직
     // ============================================================
-    // 특정 개수(n)만큼 살 때의 총 비용 계산
     function calculateBulkCost(currentLv, costFunc, n) {
         let total = 0;
         for (let i = 0; i < n; i++) {
@@ -317,7 +316,6 @@
         return total;
     }
 
-    // MAX 구매 시: (살 수 있는 개수, 총 비용) 반환
     function calculateMaxBuy(currentLv, costFunc, currentGold, limitLv = Infinity) {
         let count = 0;
         let totalCost = 0;
@@ -331,8 +329,7 @@
                 totalCost += cost;
                 count++;
                 lv++;
-                // [패치 v4.4] MAX 구매 제한 1000 -> 100,000으로 상향
-                if (count >= 100000) break; 
+                if (count >= 100000) break; // 10만개 제한
             } else {
                 break;
             }
@@ -400,7 +397,6 @@
           if (stage > 20) reward = Math.floor(reward * Math.pow(1.05, stage - 20));
           
           if (this.type === 'miniboss') reward *= 30; 
-          // [패치] 보스 보상 조정 (자주 나오니까 200배 -> 100배)
           if (this.type === 'boss') reward *= 100;    
           
           gold += reward;
@@ -415,10 +411,12 @@
     // 스폰, 이펙트, 공격 로직
     // ============================================================
     function trySpawnEnemy(now) {
+        // [패치] 보스전 도전 중: 적 없으면 보스 소환
         if (isBossBattle) {
             if (enemies.length === 0) spawnOneEnemy('boss');
             return;
         }
+        // [패치] 보스존인데 도전 안 함: 파밍몹 무한 소환 (후퇴 상태)
         if (isBossStage) {
             const currentSpeed = 3.0 + (stage * 0.1); 
             const gap = 15; 
@@ -430,6 +428,7 @@
             }
             return;
         }
+        // 일반 스테이지
         if (enemiesSpawnedInStage >= MAX_ENEMIES_PER_STAGE) return;
         const currentSpeed = 3.0 + (stage * 0.1); 
         const gap = 15; 
@@ -448,14 +447,11 @@
         
         if (mode === 'boss') { 
             type = 'boss'; 
-            // [패치] 보스 체력 조정 (300배 -> 150배)
             health = baseHealth * 150; 
         } 
         else if (mode === 'farming') { type = 'normal'; } 
         else {
             const currentCount = enemiesSpawnedInStage + 1;
-            // 20배수 스테이지는 보스존이라 일반몹 중 엘리트는 스킵됨 (이미 보스가 막고 있으니)
-            // 대신 10배수(10, 30, 50...) 스테이지는 엘리트 등장
             if (currentCount === MAX_ENEMIES_PER_STAGE && stage % 10 === 0) { type = 'miniboss'; health = baseHealth * 50; }
         }
         const newEnemy = new Enemy(type, health);
@@ -508,17 +504,20 @@
     }
 
     // ============================================================
-    // 스테이지 관리 (패치: 20스테이지마다 보스)
+    // 스테이지 관리 (패치: 자동 도전 및 후퇴)
     // ============================================================
     function checkStageClear() {
         if (isBossStage || isBossBattle) return;
         if (enemiesSpawnedInStage >= MAX_ENEMIES_PER_STAGE && enemies.length === 0) { nextStage(); }
     }
+    
     function nextStage() {
         stage++; enemiesSpawnedInStage = 0;
-        // [패치] 20스테이지마다 보스존
+        // [패치] 20스테이지 보스존 진입 시 -> 자동 도전
         if (stage % 20 === 0) {
-            isBossStage = true; showToast(`STAGE ${stage} 도달! 보스에게 도전하세요!`, "success");
+            isBossStage = true; 
+            isBossBattle = true; // 선빵!
+            showToast(`STAGE ${stage} 보스 조우! 전투 개시!`, "warning");
         } else {
             isBossStage = false;
             let stageReward = (1 + Math.floor(stage * 0.5)) * 10;
@@ -527,19 +526,33 @@
         }
         updateUI();
     }
+    
     function winStage() {
         stage++; isBossBattle = false; isBossStage = false; enemies = []; enemiesSpawnedInStage = 0;
         showToast("BOSS CLEAR! 한계를 돌파했습니다!", "success");
         gold += calculatePlayerDamage(upgradeDamage) * 100; 
         updateUI();
     }
+    
     function failStage() {
-        if (isBossBattle) { isBossBattle = false; enemies = []; showToast("보스전 패배! 다시 준비하세요.", "fail"); } 
-        else { enemies = []; enemiesSpawnedInStage = 0; showToast("방어선 붕괴! 재정비합니다.", "fail"); }
+        // [패치] 보스전 패배 시 -> 파밍 모드 전환 (후퇴)
+        if (isBossBattle) { 
+            isBossBattle = false; 
+            // isBossStage는 유지됨 -> 파밍몹 소환됨
+            enemies = []; 
+            showToast("보스전 패배! 후퇴하여 정비합니다.", "fail"); 
+        } 
+        else { 
+            // 일반 구간 패배
+            enemies = []; enemiesSpawnedInStage = 0; 
+            showToast("방어선 붕괴! 재정비합니다.", "fail"); 
+        }
+        updateUI();
     }
+    
     function showToast(msg, type) {
         const toast = document.getElementById('toastMsg'); toast.textContent = msg;
-        toast.className = type === 'fail' ? 'fail show' : 'success show';
+        toast.className = type === 'fail' ? 'fail show' : (type === 'warning' ? 'warning show' : 'success show');
         setTimeout(() => { toast.classList.remove('show'); }, 2000);
     }
 
@@ -568,7 +581,7 @@
       ctx.globalAlpha = 1.0;
       for(let i=slashes.length-1; i>=0; i--) { slashes[i].draw(); if(slashes[i].update()) slashes.splice(i, 1); }
       drawPlayer(now);
-      updateUI(); // UI 업데이트
+      updateUI();
       requestAnimationFrame(gameLoop);
     }
 
@@ -580,9 +593,6 @@
         ctx.closePath(); ctx.fill(); ctx.shadowBlur = 0;
     }
 
-    // ============================================================
-    // UI 업데이트 & 구매 로직 통합
-    // ============================================================
     function updateShopButton(btnId, currentLv, costFunc, limitLv = Infinity) {
         const btn = document.getElementById(btnId);
         let costText = "";
@@ -626,16 +636,20 @@
         document.getElementById('goldDisplay').textContent = `💰 ${Math.floor(gold).toLocaleString()} G`;
         
         let stageText = `STAGE ${stage}`;
-        // [패치] 20스테이지마다 보스존 표시
         if (stage % 20 === 0) stageText += " [BOSS ZONE]";
-        let status = isBossBattle ? "⚔️ 보스 교전 중!" : (isBossStage ? "🛑 보스 대기 (파밍 중)" : "진격 중...");
+        
+        // 상태 텍스트
+        let status = "진격 중...";
+        if (isBossBattle) status = "⚔️ 보스 교전 중!";
+        else if (isBossStage) status = "⛏️ 작전상 후퇴 (파밍 중)";
         
         const remaining = isBossStage ? 0 : MAX_ENEMIES_PER_STAGE - enemiesSpawnedInStage;
         document.getElementById('stageDisplay').textContent = isBossStage ? stageText : `${stageText} (남은 적: ${remaining})`;
         document.getElementById('currentMonsterLabel').textContent = status;
 
+        // 도전 버튼: 보스 스테이지에서 전투 중이 아닐 때(후퇴 중일 때)만 보임
         const btn = document.getElementById('challengeBtn');
-        if (isBossStage && !isBossBattle) { btn.classList.add('active'); btn.textContent = "☠️ 보스 레이드 시작"; } 
+        if (isBossStage && !isBossBattle) { btn.classList.add('active'); btn.textContent = "☠️ 보스 재도전"; } 
         else { btn.classList.remove('active'); }
 
         document.querySelector('#damageLevel').textContent = `Lv.${upgradeDamage} (DMG: ${calculatePlayerDamage(upgradeDamage).toLocaleString()})`;
@@ -670,7 +684,7 @@
     const modal = document.getElementById('shopModal');
     document.getElementById('shopBtn').onclick = () => modal.classList.add('open');
     document.getElementById('shopClose').onclick = () => modal.classList.remove('open');
-    document.getElementById('challengeBtn').onclick = () => { isBossBattle = true; enemies = []; showToast("보스 등장! 전투 개시!", "success"); };
+    document.getElementById('challengeBtn').onclick = () => { isBossBattle = true; enemies = []; showToast("보스 재도전! 전투 개시!", "success"); };
 
     const devBtn = document.getElementById('devAutoBtn');
     devBtn.onclick = () => {

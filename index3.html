@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>우주 방치형 클리커: 인피니티 소드 (v4.5)</title>
+  <title>우주 방치형 클리커: 인피니티 소드 (v4.6)</title>
   <style>
     /* ========== 기본 리셋 및 스타일 ========== */
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -169,7 +169,8 @@
     </div>
     <div id="sliderContainer">
       <span id="speedLabel">속도: x1</span>
-      <input type="range" id="speedSlider" min="1" max="20" value="1" step="1">
+      <!-- [패치 v4.6] 속도 배율 1~100배로 확장 -->
+      <input type="range" id="speedSlider" min="1" max="100" value="1" step="1">
     </div>
   </div>
 
@@ -411,12 +412,10 @@
     // 스폰, 이펙트, 공격 로직
     // ============================================================
     function trySpawnEnemy(now) {
-        // [패치] 보스전 도전 중: 적 없으면 보스 소환
         if (isBossBattle) {
             if (enemies.length === 0) spawnOneEnemy('boss');
             return;
         }
-        // [패치] 보스존인데 도전 안 함: 파밍몹 무한 소환 (후퇴 상태)
         if (isBossStage) {
             const currentSpeed = 3.0 + (stage * 0.1); 
             const gap = 15; 
@@ -428,7 +427,6 @@
             }
             return;
         }
-        // 일반 스테이지
         if (enemiesSpawnedInStage >= MAX_ENEMIES_PER_STAGE) return;
         const currentSpeed = 3.0 + (stage * 0.1); 
         const gap = 15; 

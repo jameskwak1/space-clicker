@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>우주 방치형 클리커: 인피니티 소드 (v4.6)</title>
+  <title>우주 방치형 클리커: 인피니티 소드 (v4.7)</title>
   <style>
     /* ========== 기본 리셋 및 스타일 ========== */
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -346,7 +346,9 @@
       canvasWidth = canvas.width = container.clientWidth;
       canvasHeight = canvas.height = container.clientHeight;
       playerX = canvasWidth/2 - PLAYER_WIDTH/2;
-      playerY = canvasHeight - PLAYER_HEIGHT - 60; 
+      // [패치 v4.7] 캐릭터 위치 상향 조정 (UI 겹침 방지)
+      // 60 -> 140으로 변경하여 하단 UI 공간 확보
+      playerY = canvasHeight - PLAYER_HEIGHT - 140; 
     }
     window.addEventListener('resize', () => { resizeCanvas(); initStars(); });
     resizeCanvas();
@@ -398,6 +400,7 @@
           if (stage > 20) reward = Math.floor(reward * Math.pow(1.05, stage - 20));
           
           if (this.type === 'miniboss') reward *= 30; 
+          // [패치] 보스 보상 조정 (자주 나오니까 200배 -> 100배)
           if (this.type === 'boss') reward *= 100;    
           
           gold += reward;
@@ -445,11 +448,14 @@
         
         if (mode === 'boss') { 
             type = 'boss'; 
+            // [패치] 보스 체력 조정 (300배 -> 150배)
             health = baseHealth * 150; 
         } 
         else if (mode === 'farming') { type = 'normal'; } 
         else {
             const currentCount = enemiesSpawnedInStage + 1;
+            // 20배수 스테이지는 보스존이라 일반몹 중 엘리트는 스킵됨 (이미 보스가 막고 있으니)
+            // 대신 10배수(10, 30, 50...) 스테이지는 엘리트 등장
             if (currentCount === MAX_ENEMIES_PER_STAGE && stage % 10 === 0) { type = 'miniboss'; health = baseHealth * 50; }
         }
         const newEnemy = new Enemy(type, health);

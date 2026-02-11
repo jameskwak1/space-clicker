@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>우주 방치형 클리커: 인피니티 소드 (Crit Ver.)</title>
+  <title>우주 방치형 클리커: 인피니티 소드 (v4.4)</title>
   <style>
     /* ========== 기본 리셋 및 스타일 ========== */
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -32,63 +32,116 @@
       position: fixed; left: 0; right: 0; z-index: 10; pointer-events: none;
     }
     #topUI { top: 0; padding: 10px 15px; background: linear-gradient(180deg, rgba(0,0,0,0.9), transparent); }
-    #bottomUI { bottom: 0; padding: 12px 15px; background: linear-gradient(0deg, rgba(0,0,0,0.9), transparent); display: flex; justify-content: space-between; align-items: center; }
+    
+    #bottomUI { 
+      bottom: 0; padding: 15px; 
+      background: linear-gradient(0deg, rgba(0,0,0,0.95), rgba(0,0,0,0.8), transparent); 
+      display: flex; flex-direction: column; gap: 10px;
+      align-items: center;
+    }
     
     @media (min-width: 769px) {
       #topUI, #bottomUI { left: 50%; transform: translateX(-50%); max-width: 480px; }
     }
     #topUI > *, #bottomUI > * { pointer-events: auto; }
 
-    #statsRow { display: flex; justify-content: space-between; margin-bottom: 5px; width: 100%; }
+    #statsRow { display: flex; justify-content: space-between; margin-bottom: 5px; width: 100%; align-items: center; }
     #goldDisplay, #stageDisplay { font-weight: bold; font-size: 16px; text-shadow: 0 0 5px currentColor; }
     #goldDisplay { color: #ffd700; }
     
+    /* 도전 버튼 (보스전 전용) */
+    #challengeBtn {
+      display: none; /* 기본 숨김 */
+      padding: 6px 12px;
+      background: linear-gradient(135deg, #ff0000, #990000);
+      color: #fff;
+      border: 2px solid #ff5555;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 12px;
+      box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+      animation: pulse 1.5s infinite;
+      cursor: pointer;
+    }
+    #challengeBtn.active { display: block; }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 0 10px rgba(255, 0, 0, 0.5); }
+      50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(255, 0, 0, 0.8); }
+      100% { transform: scale(1); box-shadow: 0 0 10px rgba(255, 0, 0, 0.5); }
+    }
+
     #healthBarContainer { width: 100%; height: 14px; background: #222; border: 1px solid #00ffcc; border-radius: 4px; position: relative; overflow: hidden; }
     #healthBarFill { height: 100%; width: 0%; background: linear-gradient(90deg, #ff4444, #ff8844); transition: width 0.1s; }
     #currentMonsterLabel { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; text-shadow: 0 0 2px #000; }
 
-    /* 버튼 스타일 */
+    /* 버튼 그룹 */
+    #btnGroup { display: flex; gap: 10px; width: 100%; justify-content: center; }
     button { font-family: inherit; cursor: pointer; border-radius: 6px; border: 1px solid; }
-    #shopBtn { padding: 8px 16px; background: #0d2a2a; color: #00ffcc; border-color: #00ffcc; font-weight: bold; }
-    #autoClickBtn { padding: 8px 12px; background: #1a1a2a; color: #888; border-color: #555; font-size: 12px; }
+    #shopBtn { flex: 1; padding: 10px; background: #0d2a2a; color: #00ffcc; border-color: #00ffcc; font-weight: bold; font-size: 14px; }
+    #autoClickBtn { flex: 1; padding: 10px; background: #1a1a2a; color: #888; border-color: #555; font-size: 14px; }
     #autoClickBtn.on { background: #004444; color: #00ffcc; border-color: #00ffcc; }
     
-    #speedControls { display: flex; gap: 4px; }
-    .speedBtn { padding: 6px 10px; background: #1a1a2a; color: #666; border-color: #444; font-size: 12px; }
-    .speedBtn.active { background: #00ffcc; color: #000; font-weight: bold; }
+    /* 슬라이더 */
+    #sliderContainer {
+      width: 100%; display: flex; align-items: center; gap: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #333;
+    }
+    #speedLabel { font-size: 14px; color: #00ffcc; font-weight: bold; white-space: nowrap; width: 80px; }
+    input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+    input[type=range]:focus { outline: none; }
+    input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: #333; border-radius: 3px; }
+    input[type=range]::-webkit-slider-thumb { height: 18px; width: 18px; border-radius: 50%; background: #00ffcc; cursor: pointer; -webkit-appearance: none; margin-top: -6px; box-shadow: 0 0 10px #00ffcc; }
 
-    /* 개발자 버튼 스타일 */
+    /* 개발자 버튼 */
     #devAutoBtn {
-      position: fixed; bottom: 80px; right: 20px; z-index: 100;
+      position: fixed; bottom: 120px; right: 20px; z-index: 100;
       padding: 8px 12px; background: #330000; color: #ff5555; 
       border: 1px solid #ff5555; font-size: 10px; font-weight: bold;
       opacity: 0.7; transition: opacity 0.2s;
     }
     #devAutoBtn.active { background: #ff0000; color: #fff; opacity: 1; box-shadow: 0 0 10px #ff0000; }
-    @media (min-width: 769px) {
-      #devAutoBtn { left: 50%; right: auto; transform: translateX(160px); }
-    }
+    @media (min-width: 769px) { #devAutoBtn { left: 50%; right: auto; transform: translateX(160px); } }
 
     /* 상점 모달 */
     #shopModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
     #shopModal.open { display: flex; }
-    #shopContent { background: #0a1111; border: 2px solid #00ffcc; border-radius: 12px; padding: 20px; width: 100%; max-width: 360px; box-shadow: 0 0 30px rgba(0,255,204,0.2); }
-    #shopContent h2 { text-align: center; color: #00ffcc; margin-bottom: 15px; }
+    #shopContent { background: #0a1111; border: 2px solid #00ffcc; border-radius: 12px; padding: 20px; width: 100%; max-width: 400px; box-shadow: 0 0 30px rgba(0,255,204,0.2); }
+    
+    /* 상점 헤더 및 멀티플라이어 버튼 */
+    .shopHeader { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .shopHeader h2 { color: #00ffcc; font-size: 20px; margin: 0; }
+    
+    #multiplierControls { display: flex; gap: 5px; }
+    .mulBtn { 
+      padding: 4px 8px; background: #1a1a2a; color: #666; border: 1px solid #444; border-radius: 4px; font-size: 11px; cursor: pointer; 
+    }
+    .mulBtn.active { background: #00ffcc; color: #000; border-color: #00ffcc; font-weight: bold; }
+
     .shopItem { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #222; }
     .shopItemInfo { flex: 1; margin-right: 10px; }
     .shopItemInfo .name { color: #fff; font-size: 14px; }
     .shopItemInfo .desc { color: #888; font-size: 11px; }
     .shopItemInfo .level { color: #ffd700; font-size: 11px; margin-top: 2px; }
-    .shopItem button { background: #003300; border-color: #00ffcc; color: #00ffcc; padding: 6px 12px; font-size: 11px; width: 75px; user-select: none; }
+    .shopItem button { background: #003300; border-color: #00ffcc; color: #00ffcc; padding: 8px 12px; font-size: 12px; min-width: 80px; text-align: center; }
     .shopItem button:disabled { opacity: 0.3; background: #222; border-color: #555; pointer-events: none; }
     .shopItem button:active { background: #005500; transform: scale(0.95); }
     #shopClose { width: 100%; margin-top: 15px; padding: 10px; background: #331111; border-color: #ff4444; color: #ff4444; }
 
-    /* 게임오버 */
-    #gameOverOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; flex-direction: column; align-items: center; justify-content: center; }
-    #gameOverOverlay.show { display: flex; }
-    #gameOverOverlay h2 { color: #ff4444; font-size: 32px; margin-bottom: 10px; }
-    #restartBtn { padding: 12px 30px; background: #00ffcc; color: #000; border: none; font-weight: bold; margin-top: 20px; }
+    /* 알림 메시지 */
+    #toastMsg {
+      position: fixed; top: 20%; left: 50%; transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8); color: #fff; padding: 10px 20px;
+      border-radius: 20px; border: 1px solid #fff;
+      font-size: 14px; pointer-events: none; opacity: 0; transition: opacity 0.5s;
+      z-index: 300; white-space: nowrap;
+    }
+    #toastMsg.show { opacity: 1; }
+    #toastMsg.fail { border-color: #ff0000; color: #ffaaaa; }
+    #toastMsg.success { border-color: #00ff00; color: #aaffaa; }
   </style>
 </head>
 <body>
@@ -100,6 +153,8 @@
     <div id="statsRow">
       <span id="goldDisplay">💰 0 G</span>
       <span id="stageDisplay">STAGE 1</span>
+      <!-- 도전 버튼 -->
+      <button id="challengeBtn">☠️ 보스 레이드</button>
     </div>
     <div id="healthBarContainer">
       <div id="healthBarFill"></div>
@@ -108,25 +163,36 @@
   </div>
 
   <div id="bottomUI">
-    <button id="shopBtn">🛒 상점</button>
-    <button id="autoClickBtn">⚡ AUTO: OFF</button>
-    <div id="speedControls">
-      <button class="speedBtn active" data-speed="1">x1</button>
-      <button class="speedBtn" data-speed="2">x2</button>
-      <button class="speedBtn" data-speed="4">x4</button>
+    <div id="btnGroup">
+      <button id="shopBtn">🛒 상점</button>
+      <button id="autoClickBtn">⚡ AUTO: OFF</button>
+    </div>
+    <div id="sliderContainer">
+      <span id="speedLabel">속도: x1</span>
+      <input type="range" id="speedSlider" min="1" max="20" value="1" step="1">
     </div>
   </div>
 
-  <!-- 개발자 버튼 -->
   <button id="devAutoBtn">🛠️ DEV</button>
+  <div id="toastMsg"></div>
 
+  <!-- 상점 모달 -->
   <div id="shopModal">
     <div id="shopContent">
-      <h2>무기 강화소</h2>
+      <div class="shopHeader">
+        <h2>무기 강화소</h2>
+        <div id="multiplierControls">
+          <button class="mulBtn active" data-mul="1">x1</button>
+          <button class="mulBtn" data-mul="10">x10</button>
+          <button class="mulBtn" data-mul="100">x100</button>
+          <button class="mulBtn" data-mul="MAX">MAX</button>
+        </div>
+      </div>
+
       <div class="shopItem">
         <div class="shopItemInfo">
           <div class="name">⚔️ 검기 강화</div>
-          <div class="desc">공격력 증가</div>
+          <div class="desc">공격력 대폭 증가</div>
           <div class="level" id="damageLevel">Lv.1</div>
         </div>
         <button id="buyDamage">1G</button>
@@ -142,7 +208,7 @@
       <div class="shopItem">
         <div class="shopItemInfo">
           <div class="name">🎯 치명타 확률</div>
-          <div class="desc">확률 +1%</div>
+          <div class="desc">확률 +1% (Max 100%)</div>
           <div class="level" id="critChanceLevel">Lv.1 (0%)</div>
         </div>
         <button id="buyCritChance">20G</button>
@@ -167,12 +233,6 @@
     </div>
   </div>
 
-  <div id="gameOverOverlay">
-    <h2>GAME OVER</h2>
-    <p>몬스터에게 당했습니다!</p>
-    <button id="restartBtn">다시 시작</button>
-  </div>
-
   <script>
     // ============================================================
     // 게임 전역 설정
@@ -185,11 +245,15 @@
     let gold = 0;
     let stage = 1;
     
+    // 상태 관리
+    let isBossStage = false;  
+    let isBossBattle = false; 
+    
     // 웨이브 관리
     const MAX_ENEMIES_PER_STAGE = 100; 
     let enemiesSpawnedInStage = 0;     
     let lastSpawnTime = 0;
-    let lastSpawnedEnemyWidth = 30; // [패치 1] 이전 몬스터의 너비 기억
+    let lastSpawnedEnemyWidth = 30; 
     
     let enemies = [];
     let particles = [];
@@ -199,10 +263,8 @@
     let lastDevFireTime = 0;    
     
     let autoClickEnabled = false;
-    let gameOver = false;
     let devAutoEnabled = false;
 
-    // 플레이어
     const PLAYER_WIDTH = 40;
     const PLAYER_HEIGHT = 30;
     let playerX = 0, playerY = 0;
@@ -211,38 +273,71 @@
     let upgradeDamage = 1;
     let upgradeCount = 1;
     let upgradeAutoSpeed = 1;
-    let upgradeCritChance = 1; // [패치 2] 치명타 확률 레벨 (기본 0%)
-    let upgradeCritDamage = 1; // [패치 2] 치명타 피해 레벨 (기본 150%)
+    let upgradeCritChance = 1; 
+    let upgradeCritDamage = 1; 
     
+    // 구매 배율 (1, 10, 100, 'MAX')
+    let buyMultiplier = 1; 
+
     // ============================================================
-    // 밸런스 및 비용 설정
+    // 비용 계산 함수 (레벨 기반)
     // ============================================================
-    
-    const getCostDamage = (lv) => Math.floor(lv * 1.5); 
+    const getCostDamage = (lv) => Math.floor(lv * 0.5) + 1; 
     const getCostCount = (lv) => 10 + Math.floor(Math.pow(lv, 1.8) * 5);
     const getCostAutoSpeed = (lv) => 10 + Math.floor(Math.pow(lv, 2.0));
-    
-    // [패치 2] 치명타 비용
     const getCostCritChance = (lv) => 20 + Math.floor(Math.pow(lv, 1.6) * 10);
     const getCostCritDamage = (lv) => 20 + Math.floor(Math.pow(lv, 1.6) * 10);
 
-    // 치명타 능력치 계산
-    const getCritChance = () => Math.min(100, upgradeCritChance - 1); // Lv1=0%, Lv2=1%...
-    const getCritMultiplier = () => 1.5 + (upgradeCritDamage - 1) * 0.1; // Lv1=1.5배, Lv2=1.6배...
+    const calculatePlayerDamage = (lv) => Math.floor(lv * 5 + Math.pow(lv, 1.6));
+    const getCritChance = () => Math.min(100, upgradeCritChance - 1); 
+    const getCritMultiplier = () => 1.5 + (upgradeCritDamage - 1) * 0.1; 
 
     function getAutoFireInterval() {
         const startInterval = 1000;
         const targetEarly = 300;
         const earlyLevels = 8;
-
         if (upgradeAutoSpeed <= earlyLevels) {
             const step = (startInterval - targetEarly) / (earlyLevels - 1);
             return Math.floor(startInterval - step * (upgradeAutoSpeed - 1));
         }
-        
         const minInterval = 10;
         const decay = 0.98; 
         return Math.floor(Math.max(minInterval, targetEarly * Math.pow(decay, upgradeAutoSpeed - earlyLevels)));
+    }
+
+    // ============================================================
+    // 대량 구매 계산 로직
+    // ============================================================
+    // 특정 개수(n)만큼 살 때의 총 비용 계산
+    function calculateBulkCost(currentLv, costFunc, n) {
+        let total = 0;
+        for (let i = 0; i < n; i++) {
+            total += costFunc(currentLv + i);
+        }
+        return total;
+    }
+
+    // MAX 구매 시: (살 수 있는 개수, 총 비용) 반환
+    function calculateMaxBuy(currentLv, costFunc, currentGold, limitLv = Infinity) {
+        let count = 0;
+        let totalCost = 0;
+        let lv = currentLv;
+        
+        while (true) {
+            if (limitLv !== Infinity && lv >= limitLv) break; 
+            
+            let cost = costFunc(lv);
+            if (currentGold >= totalCost + cost) {
+                totalCost += cost;
+                count++;
+                lv++;
+                // [패치 v4.4] MAX 구매 제한 1000 -> 100,000으로 상향
+                if (count >= 100000) break; 
+            } else {
+                break;
+            }
+        }
+        return { count, totalCost };
     }
 
     // ============================================================
@@ -265,76 +360,49 @@
       constructor(type, health) {
         this.width = type === 'boss' ? 100 : type === 'miniboss' ? 60 : 30;
         this.height = type === 'boss' ? 80 : type === 'miniboss' ? 50 : 30;
-        
-        this.x = 0;
-        this.y = 60; 
-        
+        this.x = 0; this.y = 60; 
         this.type = type;
         this.maxHealth = health;
         this.health = health;
-        
         this.baseSpeed = 3.0 + (stage * 0.1); 
         if(this.baseSpeed > 15) this.baseSpeed = 15; 
-
         this.direction = 1; 
         this.dropAmount = 30; 
       }
-
       update(dt) {
         const speed = this.baseSpeed * gameSpeed * (dt / 16);
         this.x += speed * this.direction;
-
         if (this.direction === 1 && this.x + this.width >= canvasWidth) {
-            this.x = canvasWidth - this.width;
-            this.y += this.dropAmount;
-            this.direction = -1;
+            this.x = canvasWidth - this.width; this.y += this.dropAmount; this.direction = -1;
+        } else if (this.direction === -1 && this.x <= 0) {
+            this.x = 0; this.y += this.dropAmount; this.direction = 1;
         }
-        else if (this.direction === -1 && this.x <= 0) {
-            this.x = 0;
-            this.y += this.dropAmount;
-            this.direction = 1;
-        }
-
-        if (this.y + this.height >= playerY) {
-            gameOver = true;
-        }
+        if (this.y + this.height >= playerY) return true; 
+        return false;
       }
-
       draw() {
-        let color = '#00ffcc'; 
-        let glow = '#00ffcc';
-        
+        let color = '#00ffcc'; let glow = '#00ffcc';
         if (this.type === 'miniboss') { color = '#ffaa00'; glow='#ffaa00'; }
         if (this.type === 'boss') { color = '#ff0055'; glow='#ff0055'; }
-
-        ctx.fillStyle = color;
-        ctx.shadowColor = glow;
-        ctx.shadowBlur = 10;
-        ctx.fillRect(this.x, this.y, this.width, this.height);
-        ctx.shadowBlur = 0;
-        
-        // 눈
+        ctx.fillStyle = color; ctx.shadowColor = glow; ctx.shadowBlur = 10;
+        ctx.fillRect(this.x, this.y, this.width, this.height); ctx.shadowBlur = 0;
         ctx.fillStyle = '#000';
-        if (this.direction === 1) { 
-             ctx.fillRect(this.x + this.width*0.6, this.y + this.height*0.2, this.width*0.15, this.width*0.15);
-        } else { 
-             ctx.fillRect(this.x + this.width*0.2, this.y + this.height*0.2, this.width*0.15, this.width*0.15);
-        }
-
-        // 체력바
+        if (this.direction === 1) ctx.fillRect(this.x + this.width*0.6, this.y + this.height*0.2, this.width*0.15, this.width*0.15);
+        else ctx.fillRect(this.x + this.width*0.2, this.y + this.height*0.2, this.width*0.15, this.width*0.15);
         const hpPercent = this.health / this.maxHealth;
-        ctx.fillStyle = '#111';
-        ctx.fillRect(this.x, this.y - 6, this.width, 4);
-        ctx.fillStyle = '#0f0';
-        ctx.fillRect(this.x, this.y - 6, this.width * hpPercent, 4);
+        ctx.fillStyle = '#111'; ctx.fillRect(this.x, this.y - 6, this.width, 4);
+        ctx.fillStyle = '#0f0'; ctx.fillRect(this.x, this.y - 6, this.width * hpPercent, 4);
       }
-
       takeDamage(dmg) {
         this.health -= dmg;
         if (this.health <= 0) {
-          let reward = 1 + Math.floor(stage / 10);
-          if (this.type === 'miniboss') reward *= 20; 
+          let reward = 1 + Math.floor(stage * 0.5);
+          if (stage > 20) reward = Math.floor(reward * Math.pow(1.05, stage - 20));
+          
+          if (this.type === 'miniboss') reward *= 30; 
+          // [패치] 보스 보상 조정 (자주 나오니까 200배 -> 100배)
           if (this.type === 'boss') reward *= 100;    
+          
           gold += reward;
           spawnParticles(this.x + this.width/2, this.y + this.height/2, this.type);
           return true; 
@@ -344,158 +412,135 @@
     }
 
     // ============================================================
-    // 스폰 로직 (겹침 완벽 해결)
+    // 스폰, 이펙트, 공격 로직
     // ============================================================
     function trySpawnEnemy(now) {
-        if (enemiesSpawnedInStage >= MAX_ENEMIES_PER_STAGE) return;
-        
-        const currentSpeed = 3.0 + (stage * 0.1); 
-        const gap = 15; // 몬스터 간 간격
-        
-        // [패치 1] 직전에 소환된 몬스터의 너비를 기준으로 대기 시간 계산
-        // 뚱뚱한 놈(보스)이 나왔으면 그만큼 더 기다려야 뒷놈이 안 겹침
-        // safeInterval = (직전몬스터너비 + 간격) / 속도
-        let safeInterval = (lastSpawnedEnemyWidth + gap) / currentSpeed * 20; 
-        
-        // [추가 로직] 만약 이번에 나올 놈이 보스라면 미리 공간을 더 확보해야 함
-        // (보스가 앞 놈 엉덩이를 찌르면 안 되니까)
-        // 하지만 trySpawn에서는 아직 이번 놈 타입을 모름 -> spawnOneEnemy에서 처리?
-        // 간단히: 보스 나오는 타이밍(100번째, 10단위) 직전에는 텀을 좀 더 주자.
-        const nextCount = enemiesSpawnedInStage + 1;
-        if (nextCount % 10 === 0 || nextCount === MAX_ENEMIES_PER_STAGE) {
-             safeInterval += 200; // 보스 나오기 전 뜸 들이기
+        if (isBossBattle) {
+            if (enemies.length === 0) spawnOneEnemy('boss');
+            return;
         }
-
-        safeInterval = Math.max(60, safeInterval); // 최소 60ms
-
+        if (isBossStage) {
+            const currentSpeed = 3.0 + (stage * 0.1); 
+            const gap = 15; 
+            let safeInterval = (lastSpawnedEnemyWidth + gap) / currentSpeed * 20; 
+            safeInterval = Math.max(60, safeInterval);
+            if (now - lastSpawnTime > (safeInterval / gameSpeed)) {
+                spawnOneEnemy('farming'); 
+                lastSpawnTime = now;
+            }
+            return;
+        }
+        if (enemiesSpawnedInStage >= MAX_ENEMIES_PER_STAGE) return;
+        const currentSpeed = 3.0 + (stage * 0.1); 
+        const gap = 15; 
+        let safeInterval = (lastSpawnedEnemyWidth + gap) / currentSpeed * 20; 
+        safeInterval = Math.max(60, safeInterval); 
         if (now - lastSpawnTime > (safeInterval / gameSpeed)) {
-            spawnOneEnemy();
+            spawnOneEnemy('normal');
             lastSpawnTime = now;
         }
     }
 
-    function spawnOneEnemy() {
-        const baseHealth = 5 + Math.pow(stage, 2.2);
+    function spawnOneEnemy(mode) {
+        let baseHealth = 10 + Math.pow(stage, 2.3);
+        if (stage > 20) baseHealth *= Math.pow(1.08, stage - 20);
+        let type = 'normal'; let health = baseHealth;
         
-        let type = 'normal';
-        let health = baseHealth;
-
-        const currentCount = enemiesSpawnedInStage + 1;
-
-        if (currentCount === MAX_ENEMIES_PER_STAGE) {
-            if (stage % 100 === 0) {
-                type = 'boss';
-                health = baseHealth * 300; 
-            } 
-            else if (stage % 10 === 0) {
-                type = 'miniboss';
-                health = baseHealth * 50;
-            }
+        if (mode === 'boss') { 
+            type = 'boss'; 
+            // [패치] 보스 체력 조정 (300배 -> 150배)
+            health = baseHealth * 150; 
+        } 
+        else if (mode === 'farming') { type = 'normal'; } 
+        else {
+            const currentCount = enemiesSpawnedInStage + 1;
+            // 20배수 스테이지는 보스존이라 일반몹 중 엘리트는 스킵됨 (이미 보스가 막고 있으니)
+            // 대신 10배수(10, 30, 50...) 스테이지는 엘리트 등장
+            if (currentCount === MAX_ENEMIES_PER_STAGE && stage % 10 === 0) { type = 'miniboss'; health = baseHealth * 50; }
         }
-
         const newEnemy = new Enemy(type, health);
         enemies.push(newEnemy);
-        
-        // [패치 1] 이번에 나온 놈 너비 저장 -> 다음 스폰 간격 계산에 씀
         lastSpawnedEnemyWidth = newEnemy.width;
-        
-        enemiesSpawnedInStage++;
+        if (mode === 'normal') enemiesSpawnedInStage++;
     }
 
-    // ============================================================
-    // 이펙트 시스템 (치명타 추가)
-    // ============================================================
     class SlashEffect {
         constructor(x, y, isCrit) {
-            this.x = x;
-            this.y = y;
-            this.life = 1.0;
+            this.x = x; this.y = y; this.life = 1.0;
             this.angle = Math.random() * Math.PI * 2;
-            this.isCrit = isCrit;
-            // 치명타면 더 크고 오래감
-            this.scale = isCrit ? 1.5 : 1.0; 
+            this.isCrit = isCrit; this.scale = isCrit ? 1.5 : 1.0; 
         }
-        update() {
-            this.life -= this.isCrit ? 0.1 : 0.15; // 치명타는 잔상이 좀 더 남음
-            return this.life <= 0;
-        }
+        update() { this.life -= this.isCrit ? 0.1 : 0.15; return this.life <= 0; }
         draw() {
-            ctx.save();
-            ctx.translate(this.x, this.y);
-            ctx.rotate(this.angle);
-            ctx.scale(this.scale, this.scale);
-            ctx.beginPath();
-            ctx.arc(0, 0, 40, 0, Math.PI); 
-            
-            // [패치 3] 치명타 색상 구분
-            if (this.isCrit) {
-                ctx.strokeStyle = `rgba(255, 50, 50, ${this.life})`; // 빨강
-                ctx.lineWidth = 6;
-                ctx.shadowColor = '#ff0000';
-                ctx.shadowBlur = 10;
-            } else {
-                ctx.strokeStyle = `rgba(200, 255, 255, ${this.life})`; // 청록
-                ctx.lineWidth = 4;
-                ctx.shadowBlur = 0;
-            }
-            
-            ctx.stroke();
-            ctx.restore();
+            ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.angle); ctx.scale(this.scale, this.scale);
+            ctx.beginPath(); ctx.arc(0, 0, 40, 0, Math.PI); 
+            if (this.isCrit) { ctx.strokeStyle = `rgba(255, 50, 50, ${this.life})`; ctx.lineWidth = 6; ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 10; } 
+            else { ctx.strokeStyle = `rgba(200, 255, 255, ${this.life})`; ctx.lineWidth = 4; ctx.shadowBlur = 0; }
+            ctx.stroke(); ctx.restore();
         }
     }
 
     function spawnParticles(x, y, type) {
       const color = type==='boss'?'#f05':(type==='miniboss'?'#fa0':'#0fc');
       for(let i=0; i<6; i++) {
-        particles.push({
-          x, y,
-          vx: (Math.random()-0.5)*8,
-          vy: (Math.random()-0.5)*8,
-          life: 1.0, color
-        });
+        particles.push({ x, y, vx: (Math.random()-0.5)*8, vy: (Math.random()-0.5)*8, life: 1.0, color });
       }
     }
 
-    // ============================================================
-    // 공격 (치명타 적용)
-    // ============================================================
     function fire() {
         if(enemies.length === 0) return;
-
-        let target = null;
-        let maxY = -9999;
-        
-        enemies.forEach(e => {
-            if (e.y > maxY) {
-                maxY = e.y;
-                target = e;
-            }
-        });
-
+        let target = null; let maxY = -9999;
+        enemies.forEach(e => { if (e.y > maxY) { maxY = e.y; target = e; } });
         if (target) {
-            // [패치 2] 치명타 계산
-            const critChance = getCritChance();
-            const isCrit = (Math.random() * 100) < critChance;
-            
-            // 이펙트 생성
+            const isCrit = (Math.random() * 100) < getCritChance();
             slashes.push(new SlashEffect(target.x + target.width/2, target.y + target.height/2, isCrit));
-
-            // 데미지 계산
-            let finalDamage = upgradeDamage;
-            if (isCrit) {
-                finalDamage *= getCritMultiplier();
-            }
-
+            let finalDamage = calculatePlayerDamage(upgradeDamage);
+            if (isCrit) finalDamage *= getCritMultiplier();
             for(let i=0; i<upgradeCount; i++) {
                 if(target.health <= 0) break; 
                 if(target.takeDamage(finalDamage)) {
-                    const idx = enemies.indexOf(target);
-                    if(idx > -1) enemies.splice(idx, 1);
-                    if (enemies.length > 0) target = enemies[0]; 
-                    else break;
+                    const idx = enemies.indexOf(target); if(idx > -1) enemies.splice(idx, 1);
+                    if (isBossBattle) { winStage(); return; }
+                    if (enemies.length > 0) target = enemies[0]; else break;
                 }
             }
         }
+    }
+
+    // ============================================================
+    // 스테이지 관리 (패치: 20스테이지마다 보스)
+    // ============================================================
+    function checkStageClear() {
+        if (isBossStage || isBossBattle) return;
+        if (enemiesSpawnedInStage >= MAX_ENEMIES_PER_STAGE && enemies.length === 0) { nextStage(); }
+    }
+    function nextStage() {
+        stage++; enemiesSpawnedInStage = 0;
+        // [패치] 20스테이지마다 보스존
+        if (stage % 20 === 0) {
+            isBossStage = true; showToast(`STAGE ${stage} 도달! 보스에게 도전하세요!`, "success");
+        } else {
+            isBossStage = false;
+            let stageReward = (1 + Math.floor(stage * 0.5)) * 10;
+            if (stage > 20) stageReward = Math.floor(stageReward * Math.pow(1.05, stage - 20));
+            gold += stageReward;
+        }
+        updateUI();
+    }
+    function winStage() {
+        stage++; isBossBattle = false; isBossStage = false; enemies = []; enemiesSpawnedInStage = 0;
+        showToast("BOSS CLEAR! 한계를 돌파했습니다!", "success");
+        gold += calculatePlayerDamage(upgradeDamage) * 100; 
+        updateUI();
+    }
+    function failStage() {
+        if (isBossBattle) { isBossBattle = false; enemies = []; showToast("보스전 패배! 다시 준비하세요.", "fail"); } 
+        else { enemies = []; enemiesSpawnedInStage = 0; showToast("방어선 붕괴! 재정비합니다.", "fail"); }
+    }
+    function showToast(msg, type) {
+        const toast = document.getElementById('toastMsg'); toast.textContent = msg;
+        toast.className = type === 'fail' ? 'fail show' : 'success show';
+        setTimeout(() => { toast.classList.remove('show'); }, 2000);
     }
 
     // ============================================================
@@ -503,142 +548,114 @@
     // ============================================================
     let lastTime = 0;
     function gameLoop(now) {
-      if(gameOver) {
-        document.getElementById('gameOverOverlay').classList.add('show');
-        return;
-      }
-
       const dt = Math.min(now - lastTime, 100);
       lastTime = now;
-
       trySpawnEnemy(now);
-
-      if (enemiesSpawnedInStage >= MAX_ENEMIES_PER_STAGE && enemies.length === 0) {
-          stage++;
-          enemiesSpawnedInStage = 0; 
-          gold += Math.floor(stage * (1 + stage/10)); 
-      }
-
-      if (autoClickEnabled) {
-         let interval = getAutoFireInterval() / gameSpeed;
-         if (now - lastAutoFireTime > interval) {
-             fire();
-             lastAutoFireTime = now;
-         }
-      }
-
-      if (devAutoEnabled) {
-         let devInterval = 10 / gameSpeed;
-         if (now - lastDevFireTime > devInterval) {
-             fire();
-             lastDevFireTime = now;
-         }
-      }
-
-      ctx.fillStyle = '#050508';
-      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+      checkStageClear();
+      if (autoClickEnabled) { let interval = getAutoFireInterval() / gameSpeed; if (now - lastAutoFireTime > interval) { fire(); lastAutoFireTime = now; } }
+      if (devAutoEnabled) { let devInterval = 10 / gameSpeed; if (now - lastDevFireTime > devInterval) { fire(); lastDevFireTime = now; } }
+      ctx.fillStyle = '#050508'; ctx.fillRect(0, 0, canvasWidth, canvasHeight);
       drawStars();
-
-      enemies.forEach(e => {
-          e.update(dt);
-          e.draw();
-      });
-
+      for (let i = enemies.length - 1; i >= 0; i--) {
+          const e = enemies[i]; const hitPlayer = e.update(dt); e.draw();
+          if (hitPlayer) { failStage(); break; }
+      }
       for(let i=particles.length-1; i>=0; i--) {
-          let p = particles[i];
-          p.x += p.vx; p.y += p.vy; p.life -= 0.05;
-          ctx.globalAlpha = p.life;
-          ctx.fillStyle = p.color;
-          ctx.fillRect(p.x, p.y, 4, 4);
+          let p = particles[i]; p.x += p.vx; p.y += p.vy; p.life -= 0.05;
+          ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, 4, 4);
           if(p.life <= 0) particles.splice(i,1);
       }
       ctx.globalAlpha = 1.0;
-
-      for(let i=slashes.length-1; i>=0; i--) {
-          slashes[i].draw();
-          if(slashes[i].update()) slashes.splice(i, 1);
-      }
-
+      for(let i=slashes.length-1; i>=0; i--) { slashes[i].draw(); if(slashes[i].update()) slashes.splice(i, 1); }
       drawPlayer(now);
-      updateUI();
-      
+      updateUI(); // UI 업데이트
       requestAnimationFrame(gameLoop);
     }
 
     function drawPlayer(now) {
-        const cx = playerX + PLAYER_WIDTH/2;
-        const cy = playerY + PLAYER_HEIGHT/2;
-        
-        ctx.fillStyle = '#00ffcc';
-        ctx.shadowColor = '#00ffcc';
-        ctx.shadowBlur = 15;
-        
-        ctx.beginPath();
-        ctx.moveTo(cx, playerY); 
-        ctx.lineTo(playerX + PLAYER_WIDTH, playerY + PLAYER_HEIGHT); 
-        ctx.lineTo(cx, playerY + PLAYER_HEIGHT - 10); 
-        ctx.lineTo(playerX, playerY + PLAYER_HEIGHT); 
-        ctx.closePath();
-        ctx.fill();
-        
-        ctx.shadowBlur = 0;
+        const cx = playerX + PLAYER_WIDTH/2; const cy = playerY + PLAYER_HEIGHT/2;
+        ctx.fillStyle = '#00ffcc'; ctx.shadowColor = '#00ffcc'; ctx.shadowBlur = 15;
+        ctx.beginPath(); ctx.moveTo(cx, playerY); ctx.lineTo(playerX + PLAYER_WIDTH, playerY + PLAYER_HEIGHT); 
+        ctx.lineTo(cx, playerY + PLAYER_HEIGHT - 10); ctx.lineTo(playerX, playerY + PLAYER_HEIGHT); 
+        ctx.closePath(); ctx.fill(); ctx.shadowBlur = 0;
+    }
+
+    // ============================================================
+    // UI 업데이트 & 구매 로직 통합
+    // ============================================================
+    function updateShopButton(btnId, currentLv, costFunc, limitLv = Infinity) {
+        const btn = document.getElementById(btnId);
+        let costText = "";
+        let affordable = false;
+        let buyAmount = 0;
+        let totalCost = 0;
+
+        if (buyMultiplier === 'MAX') {
+            const result = calculateMaxBuy(currentLv, costFunc, gold, limitLv);
+            buyAmount = result.count;
+            totalCost = result.totalCost;
+            if (buyAmount > 0) {
+                costText = `+${buyAmount} (${totalCost.toLocaleString()}G)`;
+                affordable = true;
+            } else {
+                costText = `${costFunc(currentLv).toLocaleString()}G (MAX)`;
+                affordable = false;
+            }
+        } 
+        else {
+            buyAmount = buyMultiplier;
+            if (currentLv + buyAmount > limitLv) {
+                buyAmount = limitLv - currentLv;
+            }
+            if (buyAmount <= 0) {
+                costText = "MAX";
+                affordable = false;
+            } else {
+                totalCost = calculateBulkCost(currentLv, costFunc, buyAmount);
+                costText = `${totalCost.toLocaleString()}G`;
+                affordable = (gold >= totalCost);
+            }
+        }
+
+        btn.textContent = costText;
+        btn.disabled = !affordable;
+        return { affordable, totalCost, buyAmount };
     }
 
     function updateUI() {
-        document.getElementById('goldDisplay').textContent = `💰 ${Math.floor(gold)} G`;
+        document.getElementById('goldDisplay').textContent = `💰 ${Math.floor(gold).toLocaleString()} G`;
         
-        const remaining = enemies.length + (MAX_ENEMIES_PER_STAGE - enemiesSpawnedInStage);
         let stageText = `STAGE ${stage}`;
+        // [패치] 20스테이지마다 보스존 표시
+        if (stage % 20 === 0) stageText += " [BOSS ZONE]";
+        let status = isBossBattle ? "⚔️ 보스 교전 중!" : (isBossStage ? "🛑 보스 대기 (파밍 중)" : "진격 중...");
         
-        if (stage % 100 === 0) stageText += " [BOSS]";
-        else if (stage % 10 === 0) stageText += " [ELITE]";
-        
-        document.getElementById('stageDisplay').textContent = `${stageText} (남은 적: ${remaining})`;
+        const remaining = isBossStage ? 0 : MAX_ENEMIES_PER_STAGE - enemiesSpawnedInStage;
+        document.getElementById('stageDisplay').textContent = isBossStage ? stageText : `${stageText} (남은 적: ${remaining})`;
+        document.getElementById('currentMonsterLabel').textContent = status;
 
-        // 기존 상점 UI 업데이트
-        document.querySelector('#damageLevel').textContent = `Lv.${upgradeDamage} (+${upgradeDamage})`;
-        document.querySelector('#buyDamage').textContent = `${getCostDamage(upgradeDamage)}G`;
-        document.querySelector('#buyDamage').disabled = gold < getCostDamage(upgradeDamage);
+        const btn = document.getElementById('challengeBtn');
+        if (isBossStage && !isBossBattle) { btn.classList.add('active'); btn.textContent = "☠️ 보스 레이드 시작"; } 
+        else { btn.classList.remove('active'); }
 
+        document.querySelector('#damageLevel').textContent = `Lv.${upgradeDamage} (DMG: ${calculatePlayerDamage(upgradeDamage).toLocaleString()})`;
         document.querySelector('#countLevel').textContent = `Lv.${upgradeCount}`;
-        document.querySelector('#buyCount').textContent = `${getCostCount(upgradeCount)}G`;
-        document.querySelector('#buyCount').disabled = gold < getCostCount(upgradeCount);
-
         const currentInterval = getAutoFireInterval();
-        document.querySelector('#autoSpeedLevel').textContent = `Lv.${upgradeAutoSpeed} (${(currentInterval/1000).toFixed(2)}s)`;
-        document.querySelector('#buyAutoSpeed').textContent = `${getCostAutoSpeed(upgradeAutoSpeed)}G`;
-        document.querySelector('#buyAutoSpeed').disabled = gold < getCostAutoSpeed(upgradeAutoSpeed);
-
-        // [패치 2] 치명타 UI 업데이트
+        document.querySelector('#autoSpeedLevel').textContent = `Lv.${upgradeAutoSpeed} (${(currentInterval/1000).toFixed(3)}s)`;
+        
         const critChance = getCritChance();
-        const critMult = getCritMultiplier();
-        
         document.querySelector('#critChanceLevel').textContent = `Lv.${upgradeCritChance} (${critChance}%)`;
-        document.querySelector('#buyCritChance').textContent = `${getCostCritChance(upgradeCritChance)}G`;
-        document.querySelector('#buyCritChance').disabled = (gold < getCostCritChance(upgradeCritChance)) || (critChance >= 100);
-        if (critChance >= 100) document.querySelector('#buyCritChance').textContent = "MAX";
+        document.querySelector('#critDamageLevel').textContent = `Lv.${upgradeCritDamage} (${Math.floor(getCritMultiplier()*100)}%)`;
 
-        document.querySelector('#critDamageLevel').textContent = `Lv.${upgradeCritDamage} (${Math.floor(critMult*100)}%)`;
-        document.querySelector('#buyCritDamage').textContent = `${getCostCritDamage(upgradeCritDamage)}G`;
-        document.querySelector('#buyCritDamage').disabled = gold < getCostCritDamage(upgradeCritDamage);
+        updateShopButton('buyDamage', upgradeDamage, getCostDamage);
+        updateShopButton('buyCount', upgradeCount, getCostCount);
+        updateShopButton('buyAutoSpeed', upgradeAutoSpeed, getCostAutoSpeed);
+        updateShopButton('buyCritChance', upgradeCritChance, getCostCritChance, 101); 
+        updateShopButton('buyCritDamage', upgradeCritDamage, getCostCritDamage);
 
-
-        let target = null; 
-        let maxY = -9999;
-        enemies.forEach(e => { if(e.y > maxY) { maxY = e.y; target = e; } });
-
+        let target = enemies[0];
         const bar = document.getElementById('healthBarFill');
-        const label = document.getElementById('currentMonsterLabel');
-        
-        if (target) {
-            const pct = (target.health / target.maxHealth) * 100;
-            bar.style.width = `${Math.max(0, pct)}%`;
-            let name = target.type === 'boss' ? 'BOSS' : target.type === 'miniboss' ? 'ELITE' : 'ENEMY';
-            label.textContent = `${name} HP: ${Math.floor(target.health)}`;
-        } else {
-            bar.style.width = '0%';
-            label.textContent = remaining > 0 ? '대기 중...' : 'WAVE CLEAR!';
-        }
+        if (target) { bar.style.width = `${(target.health / target.maxHealth) * 100}%`; } else { bar.style.width = '0%'; }
     }
 
     const stars = [];
@@ -646,102 +663,78 @@
         stars.length = 0;
         for(let i=0; i<60; i++) stars.push({x:Math.random()*canvasWidth, y:Math.random()*canvasHeight, s:Math.random()*2});
     }
-    function drawStars() {
-        ctx.fillStyle = '#fff';
-        stars.forEach(s => { ctx.fillRect(s.x, s.y, s.s, s.s); });
-    }
+    function drawStars() { ctx.fillStyle = '#fff'; stars.forEach(s => { ctx.fillRect(s.x, s.y, s.s, s.s); }); }
 
     canvas.addEventListener('click', fire); 
 
     const modal = document.getElementById('shopModal');
     document.getElementById('shopBtn').onclick = () => modal.classList.add('open');
     document.getElementById('shopClose').onclick = () => modal.classList.remove('open');
-    
-    // 개발자 버튼
+    document.getElementById('challengeBtn').onclick = () => { isBossBattle = true; enemies = []; showToast("보스 등장! 전투 개시!", "success"); };
+
     const devBtn = document.getElementById('devAutoBtn');
     devBtn.onclick = () => {
-        devAutoEnabled = !devAutoEnabled;
-        devBtn.classList.toggle('active', devAutoEnabled);
-        if(devAutoEnabled) {
-            devBtn.textContent = "🛠️ DEV: ON";
-            lastDevFireTime = performance.now(); 
-        } else {
-            devBtn.textContent = "🛠️ DEV: OFF";
-        }
+        devAutoEnabled = !devAutoEnabled; devBtn.classList.toggle('active', devAutoEnabled);
+        if(devAutoEnabled) { devBtn.textContent = "🛠️ DEV: ON"; lastDevFireTime = performance.now(); } 
+        else { devBtn.textContent = "🛠️ DEV: OFF"; }
     };
 
-    // 꾹 누르기 기능
-    function addHoldButton(btnId, action) {
-      const btn = document.getElementById(btnId);
-      let timer = null;
+    const speedSlider = document.getElementById('speedSlider');
+    const speedLabel = document.getElementById('speedLabel');
+    speedSlider.addEventListener('input', (e) => { gameSpeed = parseInt(e.target.value); speedLabel.textContent = `속도: x${gameSpeed}`; });
 
-      const performAction = () => { action(); };
-      const start = (e) => {
-        if(timer) return;
-        performAction();
-        timer = setTimeout(() => {
-             timer = setInterval(performAction, 80);
-        }, 300);
-      };
-      const stop = () => {
-        if(timer) { clearTimeout(timer); clearInterval(timer); timer = null; }
-      };
+    document.querySelectorAll('.mulBtn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.mulBtn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const val = btn.dataset.mul;
+            buyMultiplier = val === 'MAX' ? 'MAX' : parseInt(val);
+            updateUI(); 
+        });
+    });
 
-      btn.addEventListener('mousedown', start);
-      btn.addEventListener('mouseup', stop);
-      btn.addEventListener('mouseleave', stop);
-      btn.addEventListener('touchstart', (e) => { e.preventDefault(); start(); }); 
-      btn.addEventListener('touchend', stop);
-      btn.addEventListener('touchcancel', stop);
+    function processBuy(type) {
+        let currentLv, costFunc, limitLv = Infinity;
+        if (type === 'damage') { currentLv = upgradeDamage; costFunc = getCostDamage; }
+        else if (type === 'count') { currentLv = upgradeCount; costFunc = getCostCount; }
+        else if (type === 'auto') { currentLv = upgradeAutoSpeed; costFunc = getCostAutoSpeed; }
+        else if (type === 'critChance') { currentLv = upgradeCritChance; costFunc = getCostCritChance; limitLv = 101; }
+        else if (type === 'critDamage') { currentLv = upgradeCritDamage; costFunc = getCostCritDamage; }
+
+        let count = 0, cost = 0;
+        if (buyMultiplier === 'MAX') {
+            const res = calculateMaxBuy(currentLv, costFunc, gold, limitLv);
+            count = res.count; cost = res.totalCost;
+        } else {
+            count = buyMultiplier;
+            if (currentLv + count > limitLv) count = limitLv - currentLv;
+            if (count > 0) {
+                cost = calculateBulkCost(currentLv, costFunc, count);
+                if (gold < cost) count = 0; 
+            }
+        }
+
+        if (count > 0) {
+            gold -= cost;
+            if (type === 'damage') upgradeDamage += count;
+            else if (type === 'count') upgradeCount += count;
+            else if (type === 'auto') upgradeAutoSpeed += count;
+            else if (type === 'critChance') upgradeCritChance += count;
+            else if (type === 'critDamage') upgradeCritDamage += count;
+            updateUI();
+        }
     }
 
-    addHoldButton('buyDamage', () => {
-        const cost = getCostDamage(upgradeDamage);
-        if(gold >= cost) { gold -= cost; upgradeDamage++; updateUI(); }
-    });
-    addHoldButton('buyCount', () => {
-        const cost = getCostCount(upgradeCount);
-        if(gold >= cost) { gold -= cost; upgradeCount++; updateUI(); }
-    });
-    addHoldButton('buyAutoSpeed', () => {
-        const cost = getCostAutoSpeed(upgradeAutoSpeed);
-        if(gold >= cost) { gold -= cost; upgradeAutoSpeed++; updateUI(); }
-    });
-    // [패치 2] 치명타 상점 연동
-    addHoldButton('buyCritChance', () => {
-        const cost = getCostCritChance(upgradeCritChance);
-        if(gold >= cost && getCritChance() < 100) { gold -= cost; upgradeCritChance++; updateUI(); }
-    });
-    addHoldButton('buyCritDamage', () => {
-        const cost = getCostCritDamage(upgradeCritDamage);
-        if(gold >= cost) { gold -= cost; upgradeCritDamage++; updateUI(); }
-    });
+    document.getElementById('buyDamage').onclick = () => processBuy('damage');
+    document.getElementById('buyCount').onclick = () => processBuy('count');
+    document.getElementById('buyAutoSpeed').onclick = () => processBuy('auto');
+    document.getElementById('buyCritChance').onclick = () => processBuy('critChance');
+    document.getElementById('buyCritDamage').onclick = () => processBuy('critDamage');
 
     const autoBtn = document.getElementById('autoClickBtn');
     autoBtn.onclick = () => {
-        autoClickEnabled = !autoClickEnabled;
-        autoBtn.classList.toggle('on', autoClickEnabled);
+        autoClickEnabled = !autoClickEnabled; autoBtn.classList.toggle('on', autoClickEnabled);
         autoBtn.textContent = autoClickEnabled ? "⚡ AUTO: ON" : "⚡ AUTO: OFF";
-    };
-
-    document.querySelectorAll('.speedBtn').forEach(btn => {
-        btn.onclick = () => {
-            gameSpeed = parseInt(btn.dataset.speed);
-            document.querySelectorAll('.speedBtn').forEach(b=>b.classList.remove('active'));
-            btn.classList.add('active');
-        }
-    });
-
-    document.getElementById('restartBtn').onclick = () => {
-        gameOver = false;
-        gold = 0; stage = 1; 
-        enemies = []; enemiesSpawnedInStage = 0;
-        upgradeDamage=1; upgradeCount=1; upgradeAutoSpeed=1;
-        upgradeCritChance=1; upgradeCritDamage=1; // 초기화
-        
-        document.getElementById('gameOverOverlay').classList.remove('show');
-        initStars();
-        requestAnimationFrame(gameLoop);
     };
 
     initStars();
